@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors');
@@ -16,38 +17,24 @@ app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Conectar ao banco de dados
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'Medusawebby210',
-  database: 'academia',
+const dbConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
-});
+};
+
+const db = mysql.createConnection(dbConfig);
 
 module.exports = db;
 
-const dbCallback = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'Medusawebby210',
-  database: 'academia',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+const dbCallback = mysql.createConnection(dbConfig);
 
 // Instância para promessas
-const dbPromise = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'Medusawebby210',
-  database: 'academia',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-}).promise();
+const dbPromise = mysql.createConnection(dbConfig).promise();
 
 module.exports = { dbCallback, dbPromise };
 
@@ -95,7 +82,7 @@ app.post('/login', (req, res) => {
 
     if (!senhaCorreta) return res.status(401).json({ error: 'Senha incorreta' });
 
-    const token = jwt.sign({ id: user.id }, 'secreto', { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ 
       token, 
@@ -376,7 +363,7 @@ module.exports = router;
 // backend/index.jx
 
 // Step 2: Initialize the client object
-mercadopago.configurations.setAccessToken('APP_USR-3961943434409279-071117-8f9850fc0f65df3e618d1a0985448612-2549797259');
+mercadopago.configurations.setAccessToken(process.env.MERCADOPAGO_ACCESS_TOKEN);
 app.post("/webhook", async (req, res) => {
   console.log("📩 Webhook chegou!");
   console.log("Payload:", req.body);
@@ -983,7 +970,7 @@ app.get('/api/progress/solicitar/:userId/:cursoId', (req, res) => {
   });
 });
 
-mercadopago.configurations.setAccessToken('APP_USR-3961943434409279-071117-8f9850fc0f65df3e618d1a0985448612-2549797259');
+mercadopago.configurations.setAccessToken(process.env.MERCADOPAGO_ACCESS_TOKEN);
 
 app.post("/criar-pagamento-curso", async (req, res) => {
   const { valor, descricao, email, usuario_id, modalidade, genero, idade } = req.body;
