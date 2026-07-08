@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Footer from '../../Components/Footer';
 import Header from '../../Components/Header';
@@ -11,7 +11,6 @@ import {
   SubTitle,
   Title,
   VideoSection,
-  Container_2,
   Wrapper,
   ChapterContainer,
   ChapterTitle,
@@ -28,7 +27,6 @@ const MasculinoAvancado = () => {
   const { userId, cursoId } = useParams();
   const [openChapters, setOpenChapters] = useState({});
 
-  // Carregar dados de progresso
   useEffect(() => {
       const fetchProgressData = async () => {
         try {
@@ -54,7 +52,6 @@ const MasculinoAvancado = () => {
     }, [userId, cursoId]);
 
 
-  // Atualizar progresso ao marcar vídeo como assistido
   const handleCheckboxChange = async (index) => {
     const updatedVideos = [...watchedVideos];
     updatedVideos[index] = !updatedVideos[index];
@@ -62,11 +59,11 @@ const MasculinoAvancado = () => {
     setWatchedVideos(updatedVideos);
   
     const watchedCount = updatedVideos.filter(video => video).length;
-    const newProgress = treinos.length > 0 ? (watchedCount / treinos.length) * 100 : 0;
+    const totalExercicios = treinos.reduce((acc, t) => acc + (t.exercicios?.length || 0), 0);
+    const newProgress = totalExercicios > 0 ? (watchedCount / totalExercicios) * 100 : 0;
     const validProgress = Math.max(0, Math.min(newProgress, 100));
     setProgress(validProgress);
   
-    // ✅ Enviar progresso + checkboxes pro backend
     try {
       await fetch(`http://localhost:5000/api/progress/${userId}/${cursoId}`, {
         method: 'PUT',
@@ -105,10 +102,7 @@ const MasculinoAvancado = () => {
       setProgress(Math.max(0, Math.min(newProgress, 100)));
     }
   }, [treinos]);
-  
 
-  // Colocar todos os vídeos em um único capítulo
-  const chapters = [treinos]; // Colocando todos os treinos em um único capítulo
 
   // Alternar visibilidade do capítulo
   const toggleChapter = () => {
@@ -135,34 +129,49 @@ const MasculinoAvancado = () => {
 
           {treinos.length > 0 ? (
             <ChapterContainer>
-              {/* Botão para abrir/fechar o único capítulo */}
               <ChapterTitle onClick={toggleChapter}>
-                Aulas {openChapters[0] ? '🔽' : '▶️'}
+                Seus Treinos {openChapters[0] ? '🔽' : '▶️'}
               </ChapterTitle>
 
               {openChapters[0] && (
                 <div>
-                  {chapters[0].map((treino, index) => (
-                    <div key={index}>
-                      <Container_2>
-                        <SubTitle>{treino.nome}</SubTitle>
-                      </Container_2>
-                      <Title_2>{treino.titulo}</Title_2>
-                      <VideoSection>
-                        <video controls>
-                          <source src={treino.video_url} type="video/mp4" />
-                          Seu navegador não suporta o elemento de vídeo.
-                        </video>
-                      </VideoSection>
-                      <Checkbox>
-                        <input
-                          type="checkbox"
-                          checked={watchedVideos[index] || false}
-                          onChange={() => handleCheckboxChange(index)}
-                        />
-                        <label>Assistido</label>
-                      </Checkbox>
-                    </div>
+                  {treinos.map((treino, treinoIndex) => (
+                    <Chapter key={treino.id}>
+                      <ChapterTitle>{treino.nome}</ChapterTitle>
+                      {treino.exercicios && treino.exercicios.length > 0 ? (
+                        treino.exercicios.map((exercicio, exIndex) => {
+                          const globalIndex = treinoIndex * 100 + exIndex; // índice único
+                          return (
+                            <VideoSection key={exercicio.id}>
+                              <div className="info">
+                                <SubTitle>{exercicio.titulo}</SubTitle>
+                                {exercicio.mensagem && (
+                                  <Title_2>{exercicio.mensagem}</Title_2>
+                                )}
+                               <Checkbox className="checkbox-inside-video">
+                                <input
+                                  type="checkbox"
+                                  checked={watchedVideos[globalIndex] || false}
+                                  onChange={() => handleCheckboxChange(globalIndex)}
+                                />
+                                <span>Assistido</span>
+                              </Checkbox>
+                              </div>
+                              <div className="video-wrapper">
+                                <div className="video-container">
+                                  <video controls>
+                                    <source src={exercicio.video} type="video/mp4" />
+                                    Seu navegador não suporta o vídeo.
+                                  </video>
+                                </div>
+                              </div>
+                            </VideoSection>
+                          );
+                        })
+                      ) : (
+                        <p style={{ marginTop: '10px', fontStyle: 'italic' }}>Sem exercícios.</p>
+                      )}
+                    </Chapter>
                   ))}
                 </div>
               )}

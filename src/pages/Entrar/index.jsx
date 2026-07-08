@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Ícones de olho
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import Footer from '../../Components/Footer'; // Importando o Footer
-import Header from '../../Components/Header'; // Importando o Header
+import Footer from '../../Components/Footer'; 
+import Header from '../../Components/Header'; 
 import { useAuth } from '../../contexts/AuthContext';
-import { Navigate } from 'react-router-dom'; // Add this import
 
 const PageWrapper = styled.div`
   display: flex;
@@ -91,7 +90,6 @@ const RegisterButton = styled.button`
 
 const Login = () => {
   const [email, setEmail] = useState('');
-  const { user } = useAuth(); 
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
@@ -99,15 +97,25 @@ const Login = () => {
 
   const handleLogin = async (e) => {
   e.preventDefault();
-  const success = await login(email, senha);
-  if (success) {
-    if (email === 'gabrielleite729@gmail.com') {
+
+  try {
+    const emailNorm = email.trim().toLowerCase();
+    const adminEmail = String(import.meta.env.VITE_GMAIL || '').trim().toLowerCase();
+
+    const success = await login(emailNorm, senha);
+    if (!success) {
+      alert('Credenciais inválidas. Verifique e tente novamente.');
+      return;
+    }
+
+    if (emailNorm === adminEmail) {
       navigate('/AdminDashboard');
     } else {
       navigate('/');
     }
-  } else {
-    alert('Erro ao fazer login');
+  } catch (err) {
+    console.error(err);
+    alert('Ocorreu um erro ao tentar fazer login. Tente novamente.');
   }
 };
 

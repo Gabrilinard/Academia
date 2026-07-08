@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaQrcode } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -44,41 +44,10 @@ const PaymentMethods = styled.div`
   margin-bottom: 20px;
 `;
 
-const PaymentOption = styled.div`
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  margin: 0 10px;
-  border: 2px solid ${(props) => (props.selected ? "green" : "#ccc")};
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: scale(1.05);
-  }
-`;
-
 const Icon = styled.div`
   font-size: 2.5rem;
   margin-bottom: 10px;
   color: ${(props) => (props.selected ? "green" : "#555")};
-`;
-
-const Button = styled.button`
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  color: white;
-  background-color: green;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-
-  &:hover {
-    background-color: darkgreen;
-  }
 `;
 
 const QRCodeImage = styled.img`
@@ -106,14 +75,158 @@ const CopyButton = styled.button`
   }
 `;
 
+const PaymentOption = styled.div`
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  margin: 0 10px;
+  border: 2px solid ${(props) => (props.selected ? "green" : "#ccc")};
+  border-radius: 10px;
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
+  transition: transform 0.2s;
+  opacity: ${(props) => (props.disabled ? 0.4 : 1)};
+  filter: ${(props) => (props.disabled ? "grayscale(100%)" : "none")};
+  pointer-events: ${(props) => (props.disabled ? "none" : "auto")};
+
+  &:hover {
+    transform: ${(props) => (props.disabled ? "none" : "scale(1.05)")};
+  }
+`;
+
+const EnderecoSection = styled.div`
+  margin: 30px auto;
+  padding: 25px;
+  width: 100%;
+  max-width: 600px;
+  background-color: #fdfdfd;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const EnderecoInput = styled.input`
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+`;
+
+const EnderecoSelect = styled.select`
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+`;
+
+const EnderecoTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+`;
+
 const PaymentPage = () => {
-  const [selectedMethod] = useState("");
   const [cartTotal, setCartTotal] = useState(0);
   const [cartItems, setCartItems] = useState([]);
-  const { user } = useAuth(); // Pegando o usuário logado do contexto
+  const { user } = useAuth(); 
   const navigate = useNavigate();
   const [qrCode, setQrCode] = useState("");
   const [copiado, setCopiado] = useState(false);
+  const [mercadoPago, setMercadoPago] = useState(null);
+  const cardFormRef = useRef(null);
+  const [selectedMethod, setSelectedMethod] = useState("");
+  const [checkoutLink, setCheckoutLink] = useState("");
+  const [endereco, setEndereco] = useState({
+  rua: '', cidade: '', estado: '', cep: '', apt: ''
+});
+  const [enderecoConfirmado, setEnderecoConfirmado] = useState(false);
+
+  const estadosCidades = {
+  "AC": ["Rio Branco", "Cruzeiro do Sul", "Sena Madureira"],
+  "AL": ["Maceió", "Arapiraca", "Palmeira dos Índios"],
+  "AM": ["Manaus", "Parintins", "Itacoatiara"],
+  "AP": ["Macapá", "Santana", "Laranjal do Jari"],
+  "BA": ["Salvador", "Feira de Santana", "Vitória da Conquista"],
+  "CE": ["Fortaleza", "Caucaia", "Juazeiro do Norte"],
+  "DF": ["Brasília"],
+  "ES": ["Vitória", "Vila Velha", "Serra"],
+  "GO": ["Goiânia", "Aparecida de Goiânia", "Anápolis"],
+  "MA": ["São Luís", "Imperatriz", "Caxias"],
+  "MG": ["Belo Horizonte", "Uberlândia", "Contagem"],
+  "MS": ["Campo Grande", "Dourados", "Três Lagoas"],
+  "MT": ["Cuiabá", "Várzea Grande", "Rondonópolis"],
+  "PA": ["Belém", "Ananindeua", "Santarém"],
+  "PB": ["João Pessoa", "Campina Grande", "Santa Rita"],
+  "PE": ["Recife", "Jaboatão dos Guararapes", "Olinda"],
+  "PI": ["Teresina", "Parnaíba", "Picos"],
+  "PR": ["Curitiba", "Londrina", "Maringá"],
+  "RJ": ["Rio de Janeiro", "Niterói", "Duque de Caxias"],
+  "RN": ["Natal", "Mossoró", "Parnamirim"],
+  "RO": ["Porto Velho", "Ji-Paraná", "Ariquemes"],
+  "RR": ["Boa Vista", "Rorainópolis", "Caracaraí"],
+  "RS": ["Porto Alegre", "Caxias do Sul", "Pelotas"],
+  "SC": ["Florianópolis", "Joinville", "Blumenau"],
+  "SE": ["Aracaju", "Nossa Senhora do Socorro", "Lagarto"],
+  "SP": ["São Paulo", "Campinas", "São Bernardo do Campo"],
+  "TO": ["Palmas", "Araguaína", "Gurupi"]
+};
+
+useEffect(() => {
+    if (selectedMethod === "cartao" && !cardFormRef.current.hasChildNodes()) {
+      const mp = new window.MercadoPago("APP_USR-e5fce221-9f17-4163-a03d-4f933d063be3");
+
+      const bricksBuilder = mp.bricks();
+
+      bricksBuilder.create("cardPayment", "card-form-container", {
+        initialization: {
+          amount: cartTotal,
+        },
+        callbacks: {
+          onSubmit: async (cardData) => {
+            console.log("Dados do cartão:", cardData);
+
+            const res = await fetch("http://localhost:5000/processar-pagamento-cartao-produtos", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token: cardData.token,
+                payment_method_id: cardData.paymentMethodId,
+                issuer_id: cardData.issuerId,
+                email: user.email,
+                amount: cartTotal,
+                installments: cardData.installments,
+                description: "Pagamento dos produtos",
+                usuario_id: user.id,
+                cartItems,
+              }),
+            });
+
+            const result = await res.json();
+            console.log("Resultado do pagamento:", result);
+
+            if (result.status === "approved") {
+              alert("Pagamento aprovado!");
+              // limpar carrinho, redirecionar etc
+            } else {
+              alert("Pagamento não aprovado.");
+            }
+          },
+          onError: (error) => {
+            console.error("Erro no Brick:", error);
+          },
+          onReady: () => {
+            console.log("Brick pronto!");
+          },
+        },
+      });
+    }
+  }, [selectedMethod, cartTotal, user]);
 
 
   const copiarParaClipboard = async () => {
@@ -156,7 +269,6 @@ const PaymentPage = () => {
   
     } catch (error) {
       console.error("Erro ao processar a exclusão do carrinho:", error);
-      alert("Erro ao processar a exclusão do carrinho: " + error.message);
     }
   };
 
@@ -194,16 +306,12 @@ const PaymentPage = () => {
       email: String(emailData.email || ''),
       total: `R$ ${Number(emailData.total).toFixed(2)}`,
       produtos: String(produtosList),
+      endereco_rua: endereco.rua,
+      endereco_apt: endereco.apt || 'Nenhum dado informado.',
+      endereco_cidade: endereco.cidade,
+      endereco_estado: endereco.estado,
+      endereco_cep: endereco.cep
     };
-    
-    // Logando o templateParams para verificar sua estrutura
-    console.error('Template Params:', templateParams);
-    console.log('Enviando para EmailJS com os seguintes dados:', {
-      service_id: 'service_1yb1dkj',
-      template_id: 'template_pv2hivq',
-      public_key: '51GtvnMmEHno3_KsN',
-      templateParams
-    });    
   
     try {
       // Enviando o e-mail
@@ -219,7 +327,7 @@ const PaymentPage = () => {
     return;
   }
 
-  const email = user?.email || "gabrielleite729@gmail.com";
+  const email = user?.email || "gabriel_linard.leite@somosicev.com";
 
   try {
     const resposta = await fetch("http://localhost:5000/criar-pagamento", {
@@ -278,7 +386,71 @@ const PaymentPage = () => {
   }
 };
 
-  
+const criarPagamentoCredito = async () => {
+  if (!cartTotal || cartTotal <= 0) {
+    alert("O carrinho está vazio ou o valor total não foi encontrado.");
+    return;
+  }
+
+  const email = user?.email || "email@exemplo.com";
+
+  try {
+    const resposta = await fetch("http://localhost:5000/criar-pagamento-cartao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valor: cartTotal,
+        descricao: "Pagamento por produtos da loja",
+        email,
+        usuario_id: user?.id,
+        cartItems,
+        nome: user?.nome,
+        sobrenome: user?.sobrenome,
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.init_point) {
+      setCheckoutLink(dados.init_point);
+
+      const transactionId = dados.transaction_id;
+
+      // Verificar status do pagamento a cada 10 segundos
+      const intervalId = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`http://localhost:5000/status-pagamento/${transactionId}`);
+          const statusData = await statusRes.json();
+
+          if (statusData.status === "approved") {
+            clearInterval(intervalId);
+
+            const emailData = {
+              nome: user?.nome || "Usuário",
+              sobrenome: user?.sobrenome || "",
+              email: user?.email,
+              total: cartTotal,
+              produtos: cartItems,
+            };
+
+            await atualizarQuantidadeProdutos(cartItems);
+            await enviarEmail(emailData);
+            await handleClearCart();
+            navigate("/Loja");
+          }
+        } catch (err) {
+          console.error("Erro ao verificar status do pagamento:", err);
+        }
+      }, 10000);
+
+    } else {
+      alert("Erro ao iniciar pagamento com cartão.");
+    }
+  } catch (erro) {
+    console.error("Erro ao criar pagamento com cartão:", erro);
+  }
+};
+
   // Função para atualizar a quantidade dos produtos no banco de dados após o pagamento
   const atualizarQuantidadeProdutos = async (cartItems) => {
     console.error(cartItems)
@@ -307,53 +479,70 @@ const PaymentPage = () => {
     }
   };  
   
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=AYROVuejwmTav9wWeEFapRjXRJVLTWSrAPemWsp_2aY0nQM8UxIbG9ecEgd53npIGyuLr9THsfie3sRk&currency=BRL`;
-    script.async = true;
-    script.onload = () => {
-      window.paypal.Buttons({
-        createOrder(data, actions) {
-          return actions.order.create({
-            purchase_units: [{ amount: { value: cartTotal.toFixed(2) } }], 
-          });
-        },
-        onApprove(data, actions) {
-          return actions.order.capture().then(async (details) => {
-            if (details.status === "COMPLETED") {
-              alert("Pagamento realizado com sucesso!");
-        
-              const emailData = {
-                nome: user?.nome || "Usuário",
-                sobrenome: user?.sobrenome || "",
-                email: user?.email,
-                produtos: cartItems,
-                total: cartTotal,
-              };
-        
-              await enviarEmail(emailData);
-              await handleClearCart();
-              navigate("/Loja");
-            } else {
-              alert("Pagamento não foi concluído.");
-              console.warn("Status inesperado:", details.status);
-            }
-          });
-        },              
-        onCancel() {
-          alert("Pagamento cancelado.");
-        },
-        onError(err) {
-          console.error(err);
-        },
-      }).render("#paypal-button-container");
-    };
-    document.body.appendChild(script);
-  }, [cartTotal]);
-  
   return (
     <PageContainer>
       <Header />
+      <EnderecoSection>
+        <EnderecoTitle>Confirme seu Endereço</EnderecoTitle>
+
+        <EnderecoInput
+          type="text"
+          placeholder="Bairro + Rua"
+          value={endereco.rua}
+          onChange={(e) => setEndereco({ ...endereco, rua: e.target.value })}
+        />
+
+        <EnderecoSelect
+          value={endereco.estado}
+          onChange={(e) => {
+            setEndereco({ ...endereco, estado: e.target.value, cidade: "" });
+          }}
+        >
+          <option value="">Selecione o estado</option>
+          {Object.keys(estadosCidades).map((uf) => (
+            <option key={uf} value={uf}>{uf}</option>
+          ))}
+        </EnderecoSelect>
+
+        <EnderecoSelect
+          value={endereco.cidade}
+          onChange={(e) => setEndereco({ ...endereco, cidade: e.target.value })}
+          disabled={!endereco.estado}
+        >
+          <option value="">Selecione a cidade</option>
+          {endereco.estado &&
+            estadosCidades[endereco.estado].map((cidade) => (
+              <option key={cidade} value={cidade}>{cidade}</option>
+            ))}
+        </EnderecoSelect>
+
+        <EnderecoInput
+          type="text"
+          placeholder="APT (opcional)"
+          value={endereco.apt}
+          onChange={(e) => setEndereco({ ...endereco, apt: e.target.value })}
+        />
+
+        <EnderecoInput
+          type="text"
+          placeholder="CEP"
+          value={endereco.cep}
+          onChange={(e) => setEndereco({ ...endereco, cep: e.target.value })}
+        />
+
+        <CopyButton
+          onClick={() => {
+            if (endereco.rua && endereco.cidade && endereco.estado && endereco.cep) {
+              setEnderecoConfirmado(true);
+              alert("Endereço confirmado!");
+            } else {
+              alert("Preencha todos os campos do endereço.");
+            }
+          }}
+        >
+          Confirmar Endereço
+        </CopyButton>
+      </EnderecoSection>
       <ContentWrapper>
         <PaymentContainer>
           <Title>Escolha seu Método de Pagamento</Title>
@@ -373,25 +562,52 @@ const PaymentPage = () => {
           <PaymentMethods>
             <PaymentOption
               selected={selectedMethod === "pix"}
-              onClick={criarPagamento}
+              disabled={!enderecoConfirmado}
+              onClick={() => {
+                if (!enderecoConfirmado) return;
+                setSelectedMethod("pix");
+                criarPagamento();
+              }}
             >
               <Icon selected={selectedMethod === "pix"}>
                 <FaQrcode />
               </Icon>
               PIX
             </PaymentOption>
-          </PaymentMethods>
-          {qrCode && (
-            <QRCodeImage
-              src={qrCode}
-              alt="QR Code PIX"
-              style={{margin: 'auto'}}
-            />
+
+            <PaymentOption
+              selected={selectedMethod === "cartao"}
+              disabled={!enderecoConfirmado}
+              onClick={() => {
+                if (!enderecoConfirmado) return;
+                setSelectedMethod("cartao");
+              }}
+            >
+              <Icon selected={selectedMethod === "cartao"}>
+                💳
+              </Icon>
+              Cartão de Crédito
+            </PaymentOption>
+        </PaymentMethods>
+          {selectedMethod === "pix" && qrCode && (
+            <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <h3 style={{ textAlign: "center" }}>Escaneie o QR Code com seu app bancário:</h3>
+              <img
+                src={qrCode}
+                alt="QR Code Pix"
+                style={{ width: "320px", maxWidth: "90%", borderRadius: "8px", marginTop: "10px" }}
+              />
+              <CopyButton onClick={copiarParaClipboard}>
+                {copiado ? "Copiado!" : "Copiar Link PIX"}
+              </CopyButton>
+            </div>
           )}
-          <CopyButton onClick={copiarParaClipboard}>
-            {copiado ? "Copiado!" : "Copiar Link PIX"}
-          </CopyButton>
-          <div id="paypal-button-container"></div>
+
+          {selectedMethod === "cartao" && (
+  <div style={{ marginTop: "20px", width: "100%" }}>
+    <div id="card-form-container" ref={cardFormRef} style={{ width: "100%" }}></div>
+  </div>
+)}
         </PaymentContainer>
       </ContentWrapper>
       <Footer />

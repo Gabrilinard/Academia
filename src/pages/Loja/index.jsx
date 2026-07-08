@@ -1,6 +1,4 @@
-// Loja do cliente com produtos organizados por categoria e busca fixa
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Header from "../../Components/Header";
 import Footer from "../../Components/Footer";
 import styled from "styled-components";

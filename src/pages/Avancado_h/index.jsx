@@ -1,60 +1,134 @@
-import React, { useState, useEffect } from 'react';
-import Header from '../../Components/Header';
-import Footer from '../../Components/Footer';
-import { ProgressBar, Checkbox, Video, Container, Title, SubTitle, VideoSection, Wrapper, ContentContainer, Message, Chapter } from './style';
+import { useEffect, useMemo, useState } from "react";
+import Header from "../../Components/Header";
+import Footer from "../../Components/Footer";
+import {
+  ProgressBar,
+  Checkbox,
+  Container,
+  Title,
+  SubTitle,
+  VideoSection,
+  Wrapper,
+  ContentContainer,
+  Message,
+  Chapter,
+} from "./style";
+
+const STORAGE_VIDEOS = "watchedVideosIniciante";
+const STORAGE_PROGRESS = "progressIniciante";
+const LOCK_LAST = 3; // bloquear as 3 últimas sessões
+
+const chapters = [
+  {
+    id: 1,
+    title: "Sessão A",
+    items: [
+      { label: "Exercício 1: Crucifixo - Peck Deck (3x - 8 + 10 + 12) OBS: Drop set", src: "video1.mp4" },
+      { label: "Exercício 2: Supino - Halter - Banco Inclinado (4x - 12)", src: "video1.mp4" },
+      { label: "Exercício 3: Supino Reto - Barra (4x - 12)", src: "video2.mp4" },
+      { label: "Exercício 4: Crucifixo - Halter - Banco Reto (4x - 12)", src: "video2.mp4" },
+      { label: "Exercício 5: Desenvolvimento - Halter - Sentado no Banco (4x - 12)", src: "video2.mp4" },
+      { label: "Exercício 6: Elevação Frontal - Halter (4x - 12)", src: "video2.mp4" },
+      { label: "Exercício 7: Elevação Lateral - Halter - Unilateral Tronco Inclinado (3x - 10)", src: "video2.mp4" },
+      { label: "Exercício 8: Tríceps Pulley - Crossover - Barra - Polia Alta (4x - 12)", src: "video2.mp4" },
+      { label: "Exercício 9: Tríceps Testa Crossover - Barra - Polia Alta (3x - 15)", src: "video2.mp4" },
+      { label: "Exercício 10: Tríceps Pulley Unilateral - Crossover - Corda - Polia Alta (4x - 10)", src: "/videos/Tríceps_Unilateral_Pulley_Crossover.mp4" },
+      { label: "Exercício 11: Flexão Plantar - Smith (4x - 20)", src: "video2.mp4" },
+      { label: "Exercício 12: Esteira - Bike - Aeróbico (1x - 20min)", src: "video2.mp4" },
+    ],
+  },
+  {
+    id: 2,
+    title: "Sessão B",
+    items: [
+      { label: "BLOQUEADO!", src: "video4.mp4" },
+    ],
+  },
+  {
+    id: 3,
+    title: "Sessão C",
+    items: [
+      { label: "BLOQUEADO!", src: "video4.mp4" },
+    ],
+  },
+  {
+    id: 4,
+    title: "Sessão D",
+    items: [
+      { label: "BLOQUEADO!", src: "video4.mp4" },
+    ],
+  },
+];
+
+const totalVideos = chapters.reduce((sum, c) => sum + c.items.length, 0);
+const initialOpen = Object.fromEntries(chapters.map((c, i) => [c.id, i === 0]));
 
 const Iniciante = () => {
-  const totalVideos = 4;
-  const [progress, setProgress] = useState(0);
-  const [watchedVideos, setWatchedVideos] = useState([false, false, false, false]);
-  const [message, setMessage] = useState('');
-  const [openChapters, setOpenChapters] = useState({ 1: true, 2: false }); // Capítulo 1 aberto e Capítulo 2 fechado
- // Estado para controlar capítulos abertos
+  const [watchedVideos, setWatchedVideos] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_VIDEOS));
+    const base = Array(totalVideos).fill(false);
+    if (Array.isArray(saved)) {
+      return base.map((_, i) => Boolean(saved[i]));
+    }
+    return base;
+  });
+
+  const [openChapters, setOpenChapters] = useState(initialOpen);
+  const [message, setMessage] = useState("");
+
+  // Progresso só sobre sessões desbloqueadas
+  const progress = useMemo(() => {
+    let idx = 0, unlockedCount = 0, unlockedWatched = 0;
+    chapters.forEach((ch, ci) => {
+      const locked = ci >= chapters.length - LOCK_LAST;
+      ch.items.forEach(() => {
+        if (!locked) {
+          unlockedCount++;
+          if (watchedVideos[idx]) unlockedWatched++;
+        }
+        idx++;
+      });
+    });
+    return unlockedCount ? (unlockedWatched / unlockedCount) * 100 : 0;
+  }, [watchedVideos]);
 
   useEffect(() => {
-    const savedVideos = JSON.parse(localStorage.getItem('watchedVideosIniciante'));
-    const savedProgress = parseFloat(localStorage.getItem('progressIniciante'));
-
-    if (savedVideos) setWatchedVideos(savedVideos);
-    if (savedProgress || savedProgress === 0) setProgress(savedProgress);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('watchedVideosIniciante', JSON.stringify(watchedVideos));
-    localStorage.setItem('progressIniciante', progress);
+    localStorage.setItem(STORAGE_VIDEOS, JSON.stringify(watchedVideos));
+    localStorage.setItem(STORAGE_PROGRESS, String(progress));
   }, [watchedVideos, progress]);
 
-  const handleCheckboxChange = (index) => {
-    setWatchedVideos(prevState => {
-      const newState = [...prevState];
-      newState[index] = !newState[index];
-      return newState;
+  // Exibir aviso após 4s e ocultar 4s depois
+useEffect(() => {
+  const SHOW_DELAY_MS = 4000;   // quando começar a mostrar
+  const VISIBLE_MS    = 4000;   // quanto tempo fica visível
+
+  const showTimer = setTimeout(() => {
+    setMessage("As três últimas sessões estão bloqueadas. Faça a assinatura para desbloquear.");
+  }, SHOW_DELAY_MS);
+
+  const hideTimer = setTimeout(() => {
+    setMessage("");
+  }, SHOW_DELAY_MS + VISIBLE_MS);
+
+  return () => {
+    clearTimeout(showTimer);
+    clearTimeout(hideTimer);
+  };
+}, []);
+
+  const toggleChapter = (id) =>
+    setOpenChapters((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  const toggleVideo = (index, disabled) => {
+    if (disabled) return;
+    setWatchedVideos((prev) => {
+      const next = [...prev];
+      next[index] = !next[index];
+      return next;
     });
   };
 
-  const calculateProgress = () => {
-    const watchedCount = watchedVideos.filter(video => video).length;
-    const newProgress = (watchedCount / totalVideos) * 100;
-    setProgress(newProgress);
-
-    if (newProgress >= 50) {
-      setMessage('Você já assistiu 50% dos vídeos! Você será redirecionado para a página de assinatura.');
-      setTimeout(() => {
-        window.location.href = '/Selecionar?modalidade=Intermediário&genero=masculino';
-      }, 2000);
-    }
-  };
-
-  useEffect(() => {
-    calculateProgress();
-  }, [watchedVideos]);
-
-  const toggleChapter = (chapterNumber) => {
-    setOpenChapters(prevState => ({
-      ...prevState,
-      [chapterNumber]: !prevState[chapterNumber]
-    }));
-  };
+  let globalIndex = 0;
 
   return (
     <Container>
@@ -68,75 +142,54 @@ const Iniciante = () => {
             <span>{Math.round(progress)}%</span>
           </ProgressBar>
 
-          {message && <Message>{message}</Message>}
+          {message && (
+            <Message>
+              <div>{message}</div>
+            </Message>
+          )}
 
-          {/* Capítulo 1 */}
-          <Chapter>
-            <h2 onClick={() => toggleChapter(1)} style={{ cursor: 'pointer' }}>
-              Capítulo 1 {openChapters[1] ? '▼' : '▶'}
-            </h2>
-            {openChapters[1] && (
-              <>
-                <SubTitle>Exercício 1: Agachamento</SubTitle>
-                <VideoSection>
-                  <video controls>
-                    <source src="video1.mp4" type="video/mp4" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                  <Checkbox>
-                    <input type="checkbox" checked={watchedVideos[0]} onChange={() => handleCheckboxChange(0)} />
-                    <label>Assistido</label>
-                  </Checkbox>
-                </VideoSection>
 
-                <SubTitle>Exercício 2: Levantamento de Quadril</SubTitle>
-                <VideoSection>
-                  <video controls>
-                    <source src="video2.mp4" type="video/mp4" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                  <Checkbox>
-                    <input type="checkbox" checked={watchedVideos[1]} onChange={() => handleCheckboxChange(1)} />
-                    <label>Assistido</label>
-                  </Checkbox>
-                </VideoSection>
-              </>
-            )}
-          </Chapter>
+          {chapters.map((chapter, ci) => {
+            const locked = ci >= chapters.length - LOCK_LAST;
+            return (
+              <Chapter key={chapter.id} data-locked={locked}>
+                <h2
+                  onClick={() => toggleChapter(chapter.id)}
+                  style={{ cursor: "pointer" }}
+                  title={locked ? "Sessão bloqueada" : undefined}
+                >
+                  {chapter.title} {locked ? "🔒" : ""}{" "}
+                  {openChapters[chapter.id] ? "▼" : "▶"}
+                </h2>
 
-          {/* Capítulo 2 */}
-          <Chapter>
-            <h2 onClick={() => toggleChapter(2)} style={{ cursor: 'pointer' }}>
-              Capítulo 2 {openChapters[2] ? '▼' : '▶'}
-            </h2>
-            {openChapters[2] && (
-              <>
-                <SubTitle>Exercício 3: Cadeira Extensora</SubTitle>
-                <VideoSection>
-                  <video controls>
-                    <source src="video3.mp4" type="video/mp4" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                  <Checkbox>
-                    <input type="checkbox" checked={watchedVideos[2]} onChange={() => handleCheckboxChange(2)} />
-                    <label>Assistido</label>
-                  </Checkbox>
-                </VideoSection>
-
-                <SubTitle>Exercício 4: Afundo</SubTitle>
-                <VideoSection>
-                  <video controls>
-                    <source src="video4.mp4" type="video/mp4" />
-                    Seu navegador não suporta o elemento de vídeo.
-                  </video>
-                  <Checkbox>
-                    <input type="checkbox" checked={watchedVideos[3]} onChange={() => handleCheckboxChange(3)} />
-                    <label>Assistido</label>
-                  </Checkbox>
-                </VideoSection>
-              </>
-            )}
-          </Chapter>
+                {openChapters[chapter.id] &&
+                  chapter.items.map(({ label, src }) => {
+                    const idx = globalIndex++;
+                    const checked = watchedVideos[idx] || false;
+                    return (
+                      <div key={idx}>
+                        <SubTitle>{label}</SubTitle>
+                        <VideoSection style={locked ? { opacity: 0.5 } : undefined}>
+                          <video controls={!locked}>
+                            {!locked && <source src={src} type="video/mp4" />}
+                            Seu navegador não suporta o elemento de vídeo.
+                          </video>
+                          <Checkbox>
+                            <input
+                              type="checkbox"
+                              disabled={locked}
+                              checked={checked}
+                              onChange={() => toggleVideo(idx, locked)}
+                            />
+                            <label>{locked ? "Bloqueado" : "Assistido"}</label>
+                          </Checkbox>
+                        </VideoSection>
+                      </div>
+                    );
+                  })}
+              </Chapter>
+            );
+          })}
         </ContentContainer>
       </Wrapper>
 

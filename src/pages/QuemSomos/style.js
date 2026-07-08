@@ -14,13 +14,14 @@ export const Html = styled.html`
 export const SectionTitle = styled.h1`
   font-family: 'Sansita', sans-serif;
   font-weight: bold;
-  font-size: 4.1rem;
+  font-size: 3.4rem;
   color: black;
   margin-bottom: 20px;
+  margin-left: -5px;
 
   @media (max-width: 768px) {
-    font-size: 3.2rem;
-    width: 400px;
+    font-size: 2.2rem;
+    margin-left: 20px;
   }
 
   @media (max-width: 480px) {
@@ -32,17 +33,18 @@ export const SectionDescription = styled.p`
   font-family: 'Merriweather', serif;
   font-size: 1.2rem;
   color: black;
-  text-align: left;
-  margin-top: 10px;
+  text-align: justify;
+  margin-top: 5px;
 
   @media (max-width: 768px) {
-    font-size: 1.0rem;
+    font-size: 1.3rem;
     text-align: justify;
-    width: 300px;
+    width: 250px;
   }
 
   @media (max-width: 480px) {
     font-size: 0.9rem;
+    text-align: center;
   }
 `;
 
@@ -80,16 +82,26 @@ export const H2 = styled.h2`
 `;
 
 
-// Container do conteúdo principal
 export const ContentContainer = styled.div`
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
+  align-items: flex-start;
   padding: 40px 20px;
   margin-bottom: 40px;
-  background-color: rgb(227, 228, 222); /* Aplicando a cor de fundo */
-  width: 100%; /* Garantir que ocupe toda a largura da tela */
-  flex-wrap: wrap; /* Garante que o conteúdo se ajuste em telas menores */
+  background-color: rgb(227, 228, 222);
+  width: 100%;
+  flex-wrap: wrap;
+
+  @media (max-width: 767px) {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px 0px;
+  }
 `;
+
 
 // Seção da esquerda
 export const LeftContent = styled.div`
@@ -114,7 +126,7 @@ export const RightContent = styled.div`
   display: flex;
   justify-content: center;
   align-items: center; /* Garante que a imagem fique centralizada */
-  margin-bottom: 20px; /* Adiciona espaçamento inferior para a imagem */
+  margin-top: 15px; /* Adiciona espaçamento inferior para a imagem */
 
   @media (max-width: 1024px) {
     width: 100%; /* Ocupa a largura total em telas menores */

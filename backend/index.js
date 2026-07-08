@@ -160,7 +160,6 @@ app.post('/api/carrinho', (req, res) => {
   });
 });
 
-
 app.delete('/api/carrinho/remove', async (req, res) => {
   const { usuario_id } = req.body;
 
@@ -379,7 +378,7 @@ module.exports = router;
 // backend/index.jx
 
 // Step 2: Initialize the client object
-mercadopago.configurations.setAccessToken('APP_USR-4216646157661560-050108-4b75d865503f098e3643fe6d8b5c5b1c-1950574241');
+mercadopago.configurations.setAccessToken('APP_USR-3961943434409279-071117-8f9850fc0f65df3e618d1a0985448612-2549797259');
 app.post("/webhook", async (req, res) => {
   console.log("📩 Webhook chegou!");
   console.log("Payload:", req.body);
@@ -418,7 +417,7 @@ app.post("/criar-pagamento", async (req, res) => {
       payer: {
         email: email,
       },
-      notification_url: "https://a64d-177-107-30-154.ngrok-free.app/webhook",
+      notification_url: "https://a4c73323bd3f.ngrok-free.app/webhook",
       metadata: {
         usuario_id: req.body.usuario_id,  // <- Você envia isso do frontend
         cart_items: req.body.cartItems,   // <- Também envia do frontend
@@ -674,13 +673,10 @@ app.put("/api/produtos/:produtoId", async (req, res) => {
   }
 });
 
-
-// Endpoint para atualizar o status do treino
 app.put('/treinos/:id', (req, res) => {
-  const treinoId = req.params.id; // Id do treino
-  const { assistido } = req.body; // Status de confirmação
+  const treinoId = req.params.id;
+  const { assistido } = req.body; 
 
-  // Validação do status (assistido deve ser booleano)
   if (typeof assistido !== 'boolean') {
     return res.status(400).json({ message: 'O campo "assistido" deve ser um booleano' });
   }
@@ -704,88 +700,191 @@ app.put('/treinos/:id', (req, res) => {
   });
 });
 
-app.post('/adicionar-treino', (req, res) => {
-  const { nome, titulo, video, assistido, userId, cursoId} = req.body;
+app.post('/adicionar-bloco-treino', (req, res) => {
+  const { nome, userId, cursoId } = req.body;
 
-  if (!nome || !titulo || !video || !userId || !cursoId) {
-      return res.status(400).json({ message: 'Preencha todos os campos corretamente!' });
+  if (!nome || !userId || !cursoId) {
+    return res.status(400).json({ message: 'Preencha todos os campos corretamente!' });
   }
 
-  const sql = 'INSERT INTO treinos (nome, titulo, video, assistido, usuario_id, curso_id) VALUES (?, ?, ?, ?, ?, ?)';
-  db.query(sql, [nome, titulo, video, assistido, userId, cursoId], (err, result) => {
-      if (err) {
-          console.error('Erro ao inserir treino:', err);
-          return res.status(500).json({ message: 'Erro no servidor' });
-      }
-      res.status(200).json({ message: 'Treino adicionado com sucesso!' });
+  const sql = 'INSERT INTO treinos (nome, usuario_id, curso_id) VALUES (?, ?, ?)';
+  db.query(sql, [nome, userId, cursoId], (err, result) => {
+    if (err) {
+      console.error('Erro ao criar bloco de treino:', err);
+      return res.status(500).json({ message: 'Erro no servidor' });
+    }
+    res.status(200).json({ message: 'Bloco de treino criado com sucesso!', id: result.insertId });
   });
 });
 
-// No arquivo do backend (Ex: server.js ou routes.js)
-app.get('/api/treinos/solicitar/:userId/:cursoId', async (req, res) => {
-  try {
-    const { userId, cursoId } = req.params;
-    console.log("UserID recebido:", userId);
-    console.log("CursoID recebido:", cursoId); // Exibindo o cursoId também
-
-    // Query para buscar treinos que correspondem ao userId e cursoId
-    const [rows] = await db.promise().query('SELECT * FROM treinos WHERE usuario_id = ? AND curso_id = ?', [userId, cursoId]);
-
-    if (rows.length > 0) {
-      res.json(rows);
-    } else {
-      res.status(404).json({ message: "Nenhum treino encontrado para este usuário e curso" });
-    }
-  } catch (error) {
-    console.error("Erro ao buscar treinos:", error);
-    res.status(500).json({ error: "Erro interno do servidor" });
+const videoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/videos/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + file.originalname;
+    cb(null, uniqueName);
   }
 });
 
-app.get('/api/treinos/solicitar/aluno/:userId/:cursoId', async (req, res) => {
-  try {
-    const { userId, cursoId } = req.params;
-    console.log("UserID recebido:", userId);
-    console.log("CursoID recebido:", cursoId); // Exibindo o cursoId também
+const uploadVideo = multer({ storage: videoStorage });
 
-    // Query para buscar treinos que correspondem ao userId e cursoId
-    const [rows] = await db.promise().query('SELECT * FROM treinos WHERE usuario_id = ? AND curso_id = ?', [userId, cursoId]);
+app.post('/adicionar-exercicio', uploadVideo.single('video'), (req, res) => {
+  const { titulo, mensagem, assistido, treinoId } = req.body;
+  const file = req.file;
 
-    if (rows.length > 0) {
-      res.json(rows);
-    } else {
-      res.status(404).json({ message: "Nenhum treino encontrado para este usuário e curso" });
-    }
-  } catch (error) {
-    console.error("Erro ao buscar treinos:", error);
-    res.status(500).json({ error: "Erro interno do servidor" });
+  if (!titulo || !file || treinoId === undefined) {
+    return res.status(400).json({ message: 'Preencha todos os campos corretamente!' });
   }
+
+  const videoPath = `http://localhost:5000/uploads/videos/${file.filename}`;
+
+  const sql = 'INSERT INTO exercicios (titulo, video, mensagem, assistido, treino_id) VALUES (?, ?, ?, ?, ?)';
+  const values = [titulo, videoPath, mensagem || '', assistido === 'true', treinoId];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error('Erro ao adicionar exercício:', err);
+      return res.status(500).json({ message: 'Erro no servidor' });
+    }
+
+    res.status(200).json({
+      message: 'Exercício adicionado com sucesso!',
+      id: result.insertId,
+      videoUrl: videoPath
+    });
+  });
 });
 
-
-// Rota para remover um treino
-app.delete('/api/treinos/:id', async (req, res) => {
+app.delete('/api/remover/exercicios/:id', (req, res) => {
   const { id } = req.params;
+  const sql = 'DELETE FROM exercicios WHERE id = ?';
 
-  try {
-    const [result] = await db.promise().query(
-      'DELETE FROM treinos WHERE id = ?',
-      [id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Treino não encontrado!' });
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Erro ao remover exercício:', err);
+      return res.status(500).json({ message: 'Erro ao remover exercício' });
     }
-
-    res.status(200).json({ message: 'Treino removido com sucesso!' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Erro ao remover treino!' });
-  }
+    res.status(200).json({ message: 'Exercício removido com sucesso!' });
+  });
 });
 
+app.get('/api/treino/:treinoId/exercicios', (req, res) => {
+  const { treinoId } = req.params;
 
-// Rota para renomear um treino
+  const sql = 'SELECT * FROM exercicios WHERE treino_id = ?';
+
+  db.query(sql, [treinoId], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar exercícios:', err);
+      return res.status(500).json({ message: 'Erro no servidor ao buscar exercícios' });
+    }
+
+    res.status(200).json(results);
+  });
+});
+
+app.get('/api/treinos-com-exercicios/:userId/:cursoId', (req, res) => {
+  const { userId, cursoId } = req.params;
+
+  const sql = `
+    SELECT 
+      t.id AS treinoId, t.nome AS treinoNome,
+      e.id AS exercicioId, e.titulo, e.video, e.mensagem, e.assistido
+    FROM treinos t
+    LEFT JOIN exercicios e ON t.id = e.treino_id
+    WHERE t.usuario_id = ? AND t.curso_id = ?
+    ORDER BY t.id, e.id
+  `;
+
+  db.query(sql, [userId, cursoId], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar treinos com exercícios:', err);
+      return res.status(500).json({ message: 'Erro ao buscar dados.' });
+    }
+
+    const treinosMap = {};
+
+    results.forEach(row => {
+      if (!treinosMap[row.treinoId]) {
+        treinosMap[row.treinoId] = {
+          id: row.treinoId,
+          nome: row.treinoNome,
+          exercicios: []
+        };
+      }
+
+      if (row.exercicioId) {
+        treinosMap[row.treinoId].exercicios.push({
+          id: row.exercicioId,
+          titulo: row.titulo,
+          video: row.video,
+          mensagem: row.mensagem,
+          assistido: row.assistido
+        });
+      }
+    });
+
+    res.status(200).json(Object.values(treinosMap));
+  });
+});
+
+app.get('/api/treinos/solicitar/aluno/:userId/:cursoId', (req, res) => {
+  const { userId, cursoId } = req.params;
+
+  const treinosQuery = `
+    SELECT t.id AS treino_id, t.nome AS treino_nome, 
+           e.id AS exercicio_id, e.titulo, e.mensagem, e.video
+    FROM treinos t
+    LEFT JOIN exercicios e ON e.treino_id = t.id
+    WHERE t.usuario_id = ? AND t.curso_id = ?
+  `;
+
+  db.query(treinosQuery, [userId, cursoId], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar treinos com exercícios:', err);
+      return res.status(500).json({ message: 'Erro no servidor' });
+    }
+
+    // Agrupar por treino
+    const treinosMap = {};
+    results.forEach(row => {
+      if (!treinosMap[row.treino_id]) {
+        treinosMap[row.treino_id] = {
+          id: row.treino_id,
+          nome: row.treino_nome,
+          exercicios: []
+        };
+      }
+
+      if (row.exercicio_id) {
+        treinosMap[row.treino_id].exercicios.push({
+          id: row.exercicio_id,
+          titulo: row.titulo,
+          mensagem: row.mensagem,
+          video: row.video
+        });
+      }
+    });
+
+    const treinos = Object.values(treinosMap);
+    res.json(treinos);
+  });
+});
+
+app.delete('/api/remover/exercicios/:id', (req, res) => {
+  const { id } = req.params;
+  const sql = 'DELETE FROM exercicios WHERE id = ?';
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Erro ao remover exercício:', err);
+      return res.status(500).json({ message: 'Erro ao remover exercício' });
+    }
+    res.status(200).json({ message: 'Exercício removido com sucesso!' });
+  });
+});
+
 app.patch('/api/treinos/:id/renomear', async (req, res) => {
   const { id } = req.params;
   const { nome } = req.body;
@@ -811,7 +910,6 @@ app.patch('/api/treinos/:id/renomear', async (req, res) => {
   }
 });
 
-// Rota para trocar o vídeo de um treino
 app.patch('/api/treinos/:id/trocar-video', async (req, res) => {
   const { id } = req.params;
   const { video } = req.body;
@@ -887,9 +985,8 @@ app.get('/api/progress/solicitar/:userId/:cursoId', (req, res) => {
   });
 });
 
-mercadopago.configurations.setAccessToken('APP_USR-4216646157661560-050108-4b75d865503f098e3643fe6d8b5c5b1c-1950574241');
+mercadopago.configurations.setAccessToken('APP_USR-3961943434409279-071117-8f9850fc0f65df3e618d1a0985448612-2549797259');
 
-// Criar pagamento PIX para cursos
 app.post("/criar-pagamento-curso", async (req, res) => {
   const { valor, descricao, email, usuario_id, modalidade, genero, idade } = req.body;
 
@@ -899,7 +996,7 @@ app.post("/criar-pagamento-curso", async (req, res) => {
       description: descricao,
       payment_method_id: "pix",
       payer: { email },
-      notification_url: "https://23d5-177-107-30-154.ngrok-free.app/webhook",
+      notification_url: "https://a4c73323bd3f.ngrok-free.app/webhook",
       metadata: { usuario_id, modalidade, genero, idade }
     });
 
@@ -936,8 +1033,147 @@ app.get("/verificar-status-curso/:id", async (req, res) => {
   }
 });
 
-// Inicia o servidor
+app.post("/criar-pagamento-cartao", async (req, res) => {
+  const { valor, descricao, email } = req.body;
+
+  const preco = Number(valor?.toString().replace(",", "."));
+
+  console.log("Valor recebido:", valor, "| Convertido:", preco);
+
+  if (isNaN(preco) || preco <= 0) {
+    return res.status(400).json({ erro: "Valor inválido para pagamento." });
+  }
+
+  const preference = {
+    items: [{
+      title: descricao || "Pagamento",
+      quantity: 1,
+      currency_id: "BRL",
+      unit_price: preco
+    }],
+    payer: {
+      email: email || "comprador@teste.com"
+    },
+    back_urls: {
+      success: "https://a4c73323bd3f.ngrok-free.app/sucesso",
+      failure: "https://a4c73323bd3f.ngrok-free.app/erro",
+      pending: "https://a4c73323bd3f.ngrok-free.app/pendente"
+    },
+    auto_return: "approved"
+  };
+
+  try {
+    const resposta = await mercadopago.preferences.create(preference);
+    res.json({ init_point: resposta.body.init_point });
+  } catch (error) {
+    console.error("Erro Mercado Pago:", error);
+    res.status(500).send("Erro ao criar pagamento");
+  }
+});
+
+app.post("/criar-pagamento-cartao-curso", async (req, res) => {
+  const { valor, descricao, email } = req.body;
+  const preco = Number(valor);
+
+  const preference = {
+    items: [{
+      title: descricao || "Curso",
+      quantity: 1,
+      currency_id: "BRL",
+      unit_price: preco
+    }],
+    payer: { email },
+    back_urls: {
+      success: "https://a4c73323bd3f.ngrok-free.app/sucesso",
+      failure: "https://a4c73323bd3f.ngrok-free.app/erro",
+      pending: "https://a4c73323bd3f.ngrok-free.app/pendente"
+    },
+    auto_return: "approved"
+  };
+
+  try {
+    const resposta = await mercadopago.preferences.create(preference);
+    console.log("✅ INIT POINT:", resposta.body.init_point);
+    res.json({ init_point: resposta.body.init_point });
+
+  } catch (error) {
+    console.error("Erro ao criar pagamento com cartão:", error);
+    res.status(500).send("Erro ao criar pagamento");
+  }
+});
+
+app.post('/processar-pagamento-cartao', async (req, res) => {
+  try {
+    const payment = await mercadopago.payment.create({
+      transaction_amount: req.body.amount,
+      token: req.body.token,
+      description: req.body.description,
+      installments: req.body.installments,
+      payment_method_id: req.body.payment_method_id,
+      issuer_id: req.body.issuer_id,
+      payer: {
+        email: req.body.email,
+      }
+    });
+
+    res.json(payment.body);
+  } catch (error) {
+    console.error("Erro ao processar pagamento:", error);
+    res.status(500).json({ error: "Erro no pagamento" });
+  }
+});
+
+app.post('/processar-pagamento-cartao-produtos', async (req, res) => {
+  try {
+    const {
+      token,
+      payment_method_id,
+      issuer_id,
+      installments,
+      email,
+      amount,
+      description,
+      usuario_id,
+      cartItems
+    } = req.body;
+
+    const payment_data = {
+      transaction_amount: Number(amount),
+      token,
+      description,
+      installments: Number(installments),
+      payment_method_id,
+      issuer_id,
+      payer: {
+        email
+      }
+    };
+
+    const result = await mercadopago.payment.create(payment_data);
+
+    if (result.body.status === "approved") {
+      // Aqui você pode salvar pedido no banco, enviar e-mail etc.
+      return res.status(200).json({
+        status: "approved",
+        id: result.body.id,
+        message: "Pagamento aprovado com sucesso"
+      });
+    } else {
+      return res.status(400).json({
+        status: result.body.status,
+        message: "Pagamento não aprovado ou pendente"
+      });
+    }
+
+  } catch (error) {
+    console.error("Erro ao processar pagamento:", error);
+    return res.status(500).json({ error: "Erro interno ao processar pagamento" });
+  }
+});
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
+
+//https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=2251380261-f6463ed2-a4b9-4027-94f1-994dbca82cb0

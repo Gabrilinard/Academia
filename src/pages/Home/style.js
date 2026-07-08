@@ -42,6 +42,23 @@ export const Container = styled.div`
   }
 `;
 
+export const WhatsAppButton = styled.button`
+  margin-top: 20px;
+  padding: 16px 40px;
+  font-size: 1.3rem;
+  background-color: #25D366;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+
+  &:hover {
+    background-color: #1ebe5d;
+  }
+`;
+
 // Container da imagem principal
 export const ImageContainer = styled.div`
   position: relative;
@@ -194,38 +211,26 @@ export const FaleConoscoContainer = styled.section`
 `;
 
 export const ContentContainer = styled.div`
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 70px;
-  padding: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 20px;
-    padding: 10px;
-    text-align: center;
-    margin: auto;
-    display: inline-block;
-  }
+  padding: 40px 20px;
+  text-align: center;
 `;
 
 export const LeftContent = styled.div`
-  width: 60%;
-  padding: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 30px 20px;
   background-color: rgb(227, 228, 222);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    width: 100%;
-  }
+  align-items: center; /* Centraliza o botão */
+  text-align: center;
 `;
+
 
 export const Title = styled.h2`
   font-size: 32px;

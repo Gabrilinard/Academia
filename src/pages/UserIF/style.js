@@ -1,366 +1,231 @@
-import styled from 'styled-components';
+// style.js
+import styled from "styled-components";
 
-// Adicionando a estilização para centralizar a mensagem na tela
+/* AVISO CENTRAL */
 export const Message = styled.div`
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 20px;
-  border-radius: 10px;
-  font-size: 1.2rem;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
   z-index: 1000;
-  text-align: center;
-  width: 80%;
-  max-width: 400px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 
-  @media (max-width: 768px) {
-    width: 90%;
-    font-size: 1rem;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.4);
   }
 
-  @media (max-width: 480px) {
-    width: 95%;
-    font-size: 0.9rem;
+  > div {
+    position: relative;
+    background: rgba(0,0,0,.85);
+    color: #fff;
+    padding: 16px 20px;
+    border-radius: 12px;
+    width: min(90vw, 420px);
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
   }
 `;
 
-// Container da página
+/* CONTAINER PÁGINA */
 export const Container = styled.div`
   background-color: rgb(227, 228, 222);
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Helvetica Neue", sans-serif;
   min-height: 100vh;
-  justify-content: space-between;
-
-  @media (max-width: 768px) {
-    padding: 15px;
-  }
-  
-  @media (max-width: 480px) {
-    padding: 10px;
-  }
-`;
-
-export const Title_2 = styled.h3`
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: #444;
-  margin-top: 10px;
-  text-align: left;
-  letter-spacing: 1px;
-  font-family: 'Nunino', sans-serif;
-`;
-
-// Título principal
-export const Title = styled.h1`
-  font-family: 'Sansita', sans-serif;
-  font-weight: bold;
-  font-size: 2.5em;
-  margin-bottom: 20px;
-  color: #333;
-
-  @media (max-width: 768px) {
-    font-size: 2em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.5em;
-  }
-`;
-
-// Subtítulo
-export const SubTitle = styled.h2`
-  font-family: 'Sansita', sans-serif;
-  font-weight: bold;
-  font-size: 1.8em;
-  color: #555;
-  margin-top: 20px;
-
-  @media (max-width: 768px) {
-    font-size: 1.5em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.2em;
-  }
-`;
-
-// Seção do vídeo
-export const VideoSection = styled.div`
-  margin-bottom: 30px;
   display: flex;
   flex-direction: column;
-  align-items: left;
-  text-align: left;
-
-  video {
-    width: 35%;
-  }
-
-  @media (max-width: 768px) {
-    video {
-      width: 60%;
-    }
-  }
-
-  @media (max-width: 480px) {
-    video {
-      width: 80%;
-    }
-  }
 `;
 
-// Barra de progresso
+/* TÍTULOS */
+export const Title_2 = styled.h3`
+  font-size: clamp(0.9rem, 1.8vw, 1rem);
+  font-weight: 700;
+  color: #444;
+  margin: 10px 0 0;
+  text-align: left;
+  letter-spacing: .5px;
+`;
+
+export const Title = styled.h1`
+  font-weight: 800;
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  margin: 20px auto 10px;
+  color: #333;
+  text-align: center;
+  padding: 0 12px;
+`;
+
+export const SubTitle = styled.h2`
+  font-weight: 700;
+  font-size: clamp(1rem, 3.6vw, 1.4rem);
+  color: #222;
+  margin: 14px 0 10px;
+`;
+
+/* LAYOUT PRINCIPAL */
+export const Wrapper = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+`;
+
+export const ContentContainer = styled.div`
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+`;
+
+/* PROGRESSO */
 export const ProgressBar = styled.div`
-  width: 51%;
-  height: 30px;
-  background-color: rgb(106, 104, 104);
-  border-radius: 5px;
-  margin-top: 20px;
-  margin: auto;
+  width: 100%;
+  max-width: 720px;
+  height: 28px;
+  background-color: #6a6868;
+  border-radius: 999px;
+  margin: 16px auto 24px;
   position: relative;
+  overflow: hidden;
 
   .progress-bar-green {
-    width: ${props => props.progress}%;
+    width: ${(p) => p.progress}%;
     height: 100%;
     background-color: #28a745;
-    border-radius: 5px;
-    transition: width 0.5s ease;
+    transition: width 0.4s ease;
   }
 
   span {
     position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-weight: bold;
-  }
-
-  @media (max-width: 768px) {
-    width: 100%;
-  }
-
-  @media (max-width: 480px) {
-    width: 90%;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: clamp(0.9rem, 2.8vw, 1rem);
+    text-shadow: 0 1px 2px rgba(0,0,0,.35);
   }
 `;
 
-// Contêiner do layout (imagem à esquerda e conteúdo à direita)
-export const Wrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
+/* CAPÍTULOS */
+export const Chapter = styled.div`
+  background: #fff;
+  padding: clamp(14px, 3vw, 20px);
+  margin: 16px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.08);
+  width: 100%;
+  max-width: 900px;
 
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-
-  @media (max-width: 480px) {
-    flex-direction: column;
+  h2 {
+    font-weight: 800;
+    font-size: clamp(1.05rem, 3.8vw, 1.4rem);
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 0;
   }
 `;
 
-export const ChapterContainer = styled.div`
-  margin: 30px 0;
-  margin: auto;
-  padding: 20px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  width: 765px;
+/* SEÇÃO DE VÍDEO + CHECK */
+export const VideoSection = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 12px 16px;
+  margin-bottom: 18px;
 
-  @media (max-width: 768px) {
+  /* Empilha em telas pequenas */
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  /* vídeo responsivo 16:9 */
+  video {
     width: 100%;
-    width: 400px;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-    padding: 15px;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    background: #000;
   }
 `;
 
-export const ChapterTitle = styled.h2`
-  font-size: 1.8rem;
-  font-weight: bolder;
-  color: #333;
-  margin-bottom: 15px;
-  padding: 10px;
-  color: black;
-  border-radius: 4px;
-  text-align: left;
-
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.2rem;
-  }
-`;
-
-// Contêiner do conteúdo (lado direito)
-export const ContentContainer = styled.div`
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  text-align: left;
-`;
-
-// Checkbox para marcar vídeos assistidos
+/* CHECKBOX ACESSÍVEL (TOUCH-FRIENDLY) */
 export const Checkbox = styled.label`
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  cursor: pointer;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8f8f8;
 
   input[type="checkbox"] {
     appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%; /* Tornando o checkbox redondo */
-    border: 2px solid #007BFF; /* Cor da borda */
-    margin-right: 10px; /* Distância do checkbox para o texto */
-    position: relative;
-    cursor: pointer;
-    background-color: white;
-    transition: all 0.2s ease-in-out;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    border-radius: 6px;
+    border: 2px solid #007bff;
+    background: #fff;
+    display: grid;
+    place-items: center;
+    transition: all .15s ease-in-out;
   }
 
   input[type="checkbox"]:checked {
-    background-color: #007BFF; /* Cor de fundo quando marcado */
-    border-color: #007BFF; /* Borda quando marcado */
+    background: #007bff;
+    border-color: #007bff;
   }
 
   input[type="checkbox"]:checked::before {
-    content: '';
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: white;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    content: "✓";
+    color: #fff;
+    font-weight: 900;
+    font-size: 14px;
+    line-height: 1;
   }
 
-  label {
-    font-size: 16px;
-    color: #333;
+  span, label {
+    font-size: clamp(0.95rem, 2.8vw, 1rem);
+    color: #222;
   }
 `;
 
+/* OPCIONAIS QUE VOCÊ TINHA (AJUSTADOS) */
 export const Container_2 = styled.div`
   display: flex;
-  justify-content: left;
   align-items: center;
-  gap: 30px;
+  gap: clamp(12px, 3vw, 20px);
   text-align: left;
-
-  @media (max-width: 768px) {
-  }
-
-  @media (max-width: 480px) {
-    gap: 15px;
-  }
+  flex-wrap: wrap;
 `;
 
-// Botão de Trocar Vídeo
+/* (Se usar esses botões em outra tela, já ficam responsivos) */
 export const ChangeVideoButton = styled.button`
   background-color: #28a745;
-  color: white;
-  padding: 10px 15px;
+  color: #fff;
+  padding: 10px 14px;
   border: none;
-  border-radius: 5px;
-  margin-top: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1em;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #218838;
-  }
-
-  @media (max-width: 768px) {
-    font-size: 0.9em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.8em;
-  }
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  transition: filter .2s;
+  &:hover { filter: brightness(.95); }
 `;
 
-// Botão de Remover Treino
 export const RemoveButton = styled.button`
   background-color: #dc3545;
-  color: white;
-  padding: 10px 15px;
+  color: #fff;
+  padding: 10px 14px;
   border: none;
-  border-radius: 5px;
-  margin-top: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1em;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #c82333;
-  }
-
-  @media (max-width: 768px) {
-    font-size: 0.9em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.8em;
-  }
-`;
-
-export const Chapter = styled.div`
-  background: white;
-  padding: 20px;
-  margin: 20px auto;
-  border-radius: 10px;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 800px;
-
-  h2 {
-  font-family: 'Sansita', sans-serif;  
-  font-weight: bolder;
-  }
-`;
-
-// Botão de Adicionar Novo Treino
-export const AddButton = styled.button`
-  background-color: #ffc107;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  margin-top: 20px;
-  cursor: pointer;
-  font-size: 1.2em;
-  transition: background-color 0.3s ease;
-
-  &:hover {
-    background-color: #e0a800;
-  }
-
-  @media (max-width: 768px) {
-    font-size: 1em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.9em;
-  }
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  transition: filter .2s;
+  &:hover { filter: brightness(.95); }
 `;

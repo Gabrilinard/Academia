@@ -1,9 +1,9 @@
 // Loja do admin com produtos organizados por categoria, criando categoria nova dinamicamente ao adicionar produto
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Footer from "../../Components/Footer";
 import styled from "styled-components";
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const StyledPage = styled.div`
@@ -160,8 +160,6 @@ const Header = styled.div`
 `;
 
 const Loja = () => {
-  const navigate = useNavigate();
-  const [cart, setCart] = useState([]);
   const [categories, setCategories] = useState([]);
   const [newProductName, setNewProductName] = useState('');
   const [newProductPrice, setNewProductPrice] = useState('');
@@ -171,48 +169,49 @@ const Loja = () => {
   const [quantidades, setQuantidades] = useState({});
 
   useEffect(() => {
-    const fetchProdutos = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/produtos/solicitar');
-        const produtosBackend = response.data.produtos;
-
-        const categoriasSeparadas = {};
-        produtosBackend.forEach(prod => {
-          const categoria = prod.categoria || 'Outros';
-          if (!categoriasSeparadas[categoria]) {
-            categoriasSeparadas[categoria] = [];
-          }
-          categoriasSeparadas[categoria].push({
-            id: prod.id,
-            name: prod.nome,
-            price: prod.preco,
-            categoria: prod.categoria,
-            quantidade: prod.quantidade,
-            image: prod.imagem_url,
-          });
-        });
-
-        const categoriasFormatadas = Object.keys(categoriasSeparadas).map(nome => ({
-          name: nome,
-          products: categoriasSeparadas[nome]
-        }));
-
-        setCategories(categoriasFormatadas);
-
-        const quantidadesAtualizadas = {};
-        for (const prod of produtosBackend) {
-          if (prod.id) {
-            quantidadesAtualizadas[prod.id] = prod.quantidade;
-          }
-        }
-        setQuantidades(quantidadesAtualizadas);
-      } catch (error) {
-        console.error('Erro ao buscar produtos:', error);
-      }
-    };
-
     fetchProdutos();
   }, []);
+
+  const fetchProdutos = async () => {
+  try {
+    const response = await axios.get('http://localhost:5000/api/produtos/solicitar');
+    const produtosBackend = response.data.produtos;
+
+    const categoriasSeparadas = {};
+    produtosBackend.forEach(prod => {
+      const categoria = prod.categoria || 'Outros';
+      if (!categoriasSeparadas[categoria]) {
+        categoriasSeparadas[categoria] = [];
+      }
+      categoriasSeparadas[categoria].push({
+        id: prod.id,
+        name: prod.nome,
+        price: prod.preco,
+        categoria: prod.categoria,
+        quantidade: prod.quantidade,
+        image: prod.imagem_url,
+      });
+    });
+
+    const categoriasFormatadas = Object.keys(categoriasSeparadas).map(nome => ({
+      name: nome,
+      products: categoriasSeparadas[nome]
+    }));
+
+    setCategories(categoriasFormatadas);
+
+    const quantidadesAtualizadas = {};
+    for (const prod of produtosBackend) {
+      if (prod.id) {
+        quantidadesAtualizadas[prod.id] = prod.quantidade;
+      }
+    }
+    setQuantidades(quantidadesAtualizadas);
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
+  }
+};
+
 
   const updateQuantityInDatabase = async (productId, quantity) => {
     try {
@@ -256,42 +255,22 @@ const Loja = () => {
       const newProduct = response.data.produto;
       if (!newProduct || !newProduct.imagem_url) return;
 
-      setCategories(prevCategories => {
-        const existingCategoryIndex = prevCategories.findIndex(c => c.name === newProduct.categoria);
+      await fetchProdutos();
 
-        if (existingCategoryIndex !== -1) {
-          const updated = [...prevCategories];
-          updated[existingCategoryIndex].products.push({
-            id: newProduct.id,
-            name: newProduct.nome,
-            price: newProduct.preco,
-            image: newProduct.imagem_url
-          });
-          return updated;
-        } else {
-          return [
-            ...prevCategories,
-            {
-              name: newProduct.categoria,
-              products: [{
-                id: newProduct.id,
-                name: newProduct.nome,
-                price: newProduct.preco,
-                image: newProduct.imagem_url
-              }]
-            }
-          ];
-        }
-      });
+      alert('Produto adicionado com sucesso!');
 
+      // Limpa os campos do formulário
       setNewProductName('');
       setNewProductPrice('');
       setNewProductImage(null);
       setNewProductQuantity(1);
+      setNewProductCategory('');
     } catch (error) {
       console.error('Erro ao adicionar produto:', error);
+      alert('Erro ao adicionar produto.');
     }
-  };
+};
+
 
   const removeProduct = async (categoryIndex, productId) => {
     const confirmRemove = window.confirm('Você tem certeza que deseja remover este produto?');

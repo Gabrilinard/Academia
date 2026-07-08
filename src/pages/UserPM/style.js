@@ -1,6 +1,5 @@
 import styled from 'styled-components';
 
-// Adicionando a estilização para centralizar a mensagem na tela
 export const Message = styled.div`
   position: fixed;
   top: 50%;
@@ -8,23 +7,23 @@ export const Message = styled.div`
   transform: translate(-50%, -50%);
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 20px;
+  padding: 25px;
   border-radius: 10px;
-  font-size: 1.2rem;
+  font-size: 1.5rem;  /* aumentado */
   z-index: 1000;
   text-align: center;
   width: 80%;
-  max-width: 400px;
+  max-width: 500px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 
   @media (max-width: 768px) {
     width: 90%;
-    font-size: 1rem;
+    font-size: 1.2rem;
   }
 
   @media (max-width: 480px) {
     width: 95%;
-    font-size: 0.9rem;
+    font-size: 1rem;
   }
 `;
 
@@ -49,70 +48,145 @@ export const Container = styled.div`
 `;
 
 export const Title_2 = styled.h3`
-  font-size: 0.9rem;
+  font-size: 2.5rem;
   font-weight: bold;
   color: #444;
-  margin-top: 10px;
   text-align: left;
   letter-spacing: 1px;
   font-family: 'Nunino', sans-serif;
-`;
-
-// Título principal
-export const Title = styled.h1`
-  font-family: 'Sansita', sans-serif;
-  font-weight: bold;
-  font-size: 2.5em;
-  margin-bottom: 20px;
-  color: #333;
 
   @media (max-width: 768px) {
-    font-size: 2em;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1.5em;
+    text-align: left;
+    font-size: 1.8rem;
   }
 `;
 
-// Subtítulo
 export const SubTitle = styled.h2`
   font-family: 'Sansita', sans-serif;
   font-weight: bold;
-  font-size: 1.8em;
+  font-size: 3.5em;
   color: #555;
-  margin-top: 20px;
+  margin-top: 5px;
 
   @media (max-width: 768px) {
-    font-size: 1.5em;
+    font-size: 2.7rem;
   }
 
   @media (max-width: 480px) {
     font-size: 1.2em;
+    text-align: center;
   }
 `;
 
-// Seção do vídeo
-export const VideoSection = styled.div`
-  margin-bottom: 30px;
-  display: flex;
-  flex-direction: column;
-  align-items: left;
-  text-align: left;
-
-  video {
-    width: 35%;
-  }
+export const Title = styled.h1`
+  font-family: 'Sansita', sans-serif;
+  font-weight: bold;
+  font-size: 3.9rem; /* aumentado */
+  margin-bottom: 25px;
+  color: #333;
+  text-align: center;
 
   @media (max-width: 768px) {
-    video {
-      width: 60%;
-    }
+    font-size: 2.5em;
+    text-align: center;
   }
 
   @media (max-width: 480px) {
-    video {
-      width: 80%;
+    font-size: 2em;
+  }
+`;
+
+export const VideoSection = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin: 30px 0;
+  gap: 20px;
+
+  .info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+  }
+
+  .video-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      max-width: 100%; /* Usa 100% da largura disponível */
+      margin-top: 10px;
+      height: 300px;
+      
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .checkbox-inside-video {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 6px 10px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
+        @media (max-width: 480px) {
+          position: static;
+          margin-top: 10px;
+          margin-left: 0;
+          align-self: flex-start;
+          background: transparent;
+          box-shadow: none;
+          justify-content: flex-start;
+          padding: 0;
+          font-size: 1rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        max-width: 100%;
+        width: 270px;
+        height: 250px;
+      }
+
+      @media (max-width: 480px) {
+        max-width: 100%;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+
+    .info {
+      text-align: center;
+      align-items: center;
+    }
+
+    .video-wrapper {
+      justify-content: center;
+
+      .video-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
     }
   }
 `;
@@ -195,7 +269,7 @@ export const ChapterTitle = styled.h2`
   font-weight: bolder;
   color: #333;
   margin-bottom: 15px;
-  padding: 10px;
+
   color: black;
   border-radius: 4px;
   text-align: left;
@@ -209,54 +283,67 @@ export const ChapterTitle = styled.h2`
   }
 `;
 
-// Contêiner do conteúdo (lado direito)
 export const ContentContainer = styled.div`
   flex: 2;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   text-align: left;
+
+  @media (max-width: 480px) {
+    text-align: center;
+    align-items: center;
+  }
 `;
 
-// Checkbox para marcar vídeos assistidos
 export const Checkbox = styled.label`
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  gap: 10px;
   cursor: pointer;
+  font-size: 16px;
+  user-select: none;
 
   input[type="checkbox"] {
     appearance: none;
     width: 20px;
     height: 20px;
-    border-radius: 50%; /* Tornando o checkbox redondo */
-    border: 2px solid #007BFF; /* Cor da borda */
-    margin-right: 10px; /* Distância do checkbox para o texto */
+    border: 2px solid #28a745;
+    border-radius: 4px;
+    background-color: #fff;
     position: relative;
-    cursor: pointer;
-    background-color: white;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.2s ease;
+
+    &:checked {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+
+    &:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 6px;
+      height: 11px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.3);
+    }
   }
 
-  input[type="checkbox"]:checked {
-    background-color: #007BFF; /* Cor de fundo quando marcado */
-    border-color: #007BFF; /* Borda quando marcado */
-  }
-
-  input[type="checkbox"]:checked::before {
-    content: '';
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: white;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  label {
-    font-size: 16px;
+  span {
     color: #333;
+    font-weight: 500;
+  }
+
+  @media (max-width: 480px) {
+    justify-content: flex-start;
   }
 `;
 

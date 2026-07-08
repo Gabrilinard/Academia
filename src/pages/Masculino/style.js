@@ -1,7 +1,5 @@
 import styled from 'styled-components';
 
-// Adicionando a estilização para centralizar a mensagem na tela
-// Container da página
 export const Container = styled.div`
   background-color: rgb(227, 228, 222);
   font-family: Arial, sans-serif;
@@ -111,11 +109,22 @@ export const Cont = styled.div`
   display: flex;
   align-items: center; /* Centraliza o conteúdo */
   justify-content: space-between;
+  margin-right: 5px;
 
   /* Media Query para telas pequenas (mobile) */
   @media (max-width: 768px) {
   }
 `;
+
+export const TreinoCard = styled.div`
+  background-color: #f9f9f9;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+`;
+
 
 // Barra de progresso
 export const ProgressBar = styled.div`
@@ -152,21 +161,22 @@ export const ProgressBar = styled.div`
 // Seção do vídeo
 export const VideoSection = styled.div`
   display: flex;
-  flex-direction: column; /* Alinha o conteúdo em coluna */
-  align-items: center; /* Centraliza o conteúdo */
+  flex-direction: column;
+  align-items: center;
   gap: 20px;
   margin-bottom: 20px;
 
   video {
-    width: 90%;
-    max-width: 500px;
+    width: 300px;
+    height: 300px;
     border-radius: 8px;
+    object-fit: cover; /* Mantém o preenchimento proporcional */
   }
 
-  /* Media Query para telas pequenas (mobile) */
   @media (max-width: 768px) {
     video {
-      max-width: 100%;
+      width: 100%;
+      height: auto;
     }
   }
 `;
@@ -308,3 +318,4 @@ export const Message = styled.div`
     padding: 15px;
   }
 `;
+

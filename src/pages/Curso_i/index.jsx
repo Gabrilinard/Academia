@@ -1,4 +1,3 @@
-import React from 'react';
 import Header from '../../Components/Header';
 import Footer from '../../Components/Footer';
 import { Container, Banner, Title, Container_2, Box, PremiumSection, PremiumButton, WorkoutImage_1, WorkoutImage, H3, Texto } from './style';
@@ -10,7 +9,6 @@ const Treinos = () => {
     return (
         <Container>
             <Header />
-            {/* Alterado para não passar o src diretamente */}
             <Banner>
                 <div style={{ backgroundImage: `url(${bannerImage})` }} />
             </Banner>

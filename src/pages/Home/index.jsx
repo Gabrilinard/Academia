@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Header from '../../Components/Header';
 import Footer from '../../Components/Footer';
@@ -10,13 +10,14 @@ import logo from '../../assets/logolg.jpeg'; //
 import lg1 from '../../assets/imglg1.jpeg'; // 
 import lg2 from '../../assets/imglg2.jpeg'; // 
 import lg3 from '../../assets/imglg3.jpeg'; // 
-import wheyImg from '../../assets/whey.jpeg'; // Imagem de Whey
-import { WelcomeText, TextWrapper, Container, ImageContainer, Image, OverlayText, SectionTitle, ProductContainer, ProductImage, ProductInfo, ButtonAdd, ButtonLoja, FaleConoscoContainer, ContentContainer, LeftContent, Title, Description, ContactInfo, Form, Input, TextArea, SubmitButton, ImageContainer_2, RedesSociaisContainer, SocialButton, SocialImagesContainer, SocialImage, Display} from './style'; // Estilos
+import wheyImg from '../../assets/whey.jpeg'; 
+import { WelcomeText, TextWrapper, Container, ImageContainer, Image, OverlayText, SectionTitle, ProductContainer, ProductImage, ProductInfo, ButtonAdd, ButtonLoja, FaleConoscoContainer, ContentContainer, LeftContent, Title, Description, ImageContainer_2, RedesSociaisContainer, SocialButton, SocialImagesContainer, SocialImage, Display, WhatsAppButton} from './style'; // Estilos
 import { useAuth } from '../../contexts/AuthContext';
-import emailjs from 'emailjs-com'; // Certifique-se de ter o emailjs configurado
+import emailjs from 'emailjs-com'; 
 
 const Home = () => {
   const [cart, setCart] = useState([]);
+  const [quantidade] = useState(1);
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     nome: '',
@@ -27,49 +28,74 @@ const Home = () => {
   const [mensagemEnviada, setMensagemEnviada] = useState('');
   const formRef = useRef();
 
+  const [products, setProducts] = useState([]);
+
   useEffect(() => {
-    const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
-    setCart(savedCart);
-  }, []);
+    const fetchProdutos = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/produtos/solicitar');
+        const todos = response.data.produtos;
 
-  // 🔹 Criando um array de produtos
-  const products = [
-    { id: 1, name: 'Creatina', price: 120.00, image: creatinaImg },
-    { id: 2, name: 'Hipercalórico', price: 110.00, image: hipercaloricoImg },
-    { id: 3, name: 'Whey Protein', price: 120.00, image: wheyImg }
-  ];
+        const nomeParaImagem = {
+          'Creatina': creatinaImg,
+          'Hipercalórico': hipercaloricoImg,
+          'Whey': wheyImg
+        };
 
-  const handleAddToCart = async (produtoId, produtoNome, produtoPreco) => {
-    if (!user) {
-      alert("Você precisa estar logado para adicionar produtos ao carrinho.");
-      return;
-    }
+        const produtosDesejados = ['Creatina', 'Hipercalórico', 'Whey'];
 
-    try {
-      const response = await axios.post('http://localhost:5000/api/carrinho', {
-        usuario_id: user.id,
-        produto_id: produtoId,
-        produto_nome: produtoNome,
-        produto_preco: produtoPreco,
-        quantidade: 1
-      });
+        const filtrados = produtosDesejados.map(nome => {
+          const encontrado = todos.find(p => p.nome === nome);
+          return {
+            id: encontrado?.id || null,
+            name: nome,
+            price: Number(encontrado?.preco || 0),
+            quantidade: encontrado?.quantidade || 0,
+            image: nomeParaImagem[nome] || '',
+          };
+        });
 
-      if (response.status === 200) {
-        alert('Produto adicionado ao carrinho com sucesso!');
+        setProducts(filtrados);
+      } catch (error) {
+        console.error('Erro ao buscar produtos em destaque:', error);
       }
-    } catch (error) {
-      console.error('Erro ao adicionar produto ao carrinho:', error);
-      alert('Erro ao adicionar o produto ao carrinho');
-    }
-  };
+    };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+    fetchProdutos();
+}, []);
+
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    };
+
+    const handleAddToCart = async (produtoId, produtoNome, produtoPreco) => {
+  if (!user) {
+    alert("Você precisa estar logado para adicionar produtos ao carrinho.");
+    return;
+  }
+
+  try {
+    const response = await axios.post('http://localhost:5000/api/carrinho', {
+      usuario_id: user.id,
+      produto_id: produtoId,
+      produto_nome: produtoNome,
+      produto_preco: produtoPreco,
+      quantidade
+    });
+
+    if (response.status === 200) {
+      alert('Produto adicionado ao carrinho com sucesso!');
+    }
+  } catch (error) {
+    console.error('Erro ao adicionar produto ao carrinho:', error);
+    alert('Não temos mais esse produto em nosso estoque.');
+  }
+};
+
 
   const sendEmail = (e) => {
     e.preventDefault();
@@ -116,13 +142,17 @@ const Home = () => {
             <ProductInfo>
               <p>{product.name}</p>
               <p style={{ color: 'black' }}>R$ {product.price.toFixed(2).replace('.', ',')}</p>
-              <ButtonAdd onClick={() => handleAddToCart(product.id, product.name, product.price)}>
-                Adicionar ao Carrinho
-              </ButtonAdd>
+              {product.quantidade > 0 ? (
+                <ButtonAdd onClick={() => handleAddToCart(product.id, product.name, product.price)}>
+                  Adicionar ao Carrinho
+                </ButtonAdd>
+              ) : (
+                <p style={{ color: 'red' }}><strong>Produto indisponível no momento</strong></p>
+    )}
             </ProductInfo>
           </ProductImage>
         ))}
-      </ProductContainer>
+  </ProductContainer>
       <ButtonLoja onClick={() => window.location.href = '/loja'}>Ir para a Loja</ButtonLoja>
       <RedesSociaisContainer>
       <Display>
@@ -166,27 +196,18 @@ const Home = () => {
 
     </RedesSociaisContainer>
       <FaleConoscoContainer>
-        <ContentContainer>
-          <LeftContent>
-            <Title>Fale Conosco</Title>
-            <Description>Entre em contato para mais informações.</Description>
-            <ContactInfo>
-              <p><strong>Email:</strong> email@exemplo.com</p>
-              <p><strong>Telefone:</strong> (555) 555-5555</p>
-            </ContactInfo>
-            <Form ref={formRef} onSubmit={sendEmail}>
-              <Input type="text" name="nome" placeholder="Nome" value={formData.nome} onChange={handleInputChange} required />
-              <Input type="text" name="sobrenome" placeholder="Sobrenome" value={formData.sobrenome} onChange={handleInputChange} required />
-              <Input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleInputChange} required />
-              <TextArea name="mensagem" placeholder="Mensagem" rows="5" value={formData.mensagem} onChange={handleInputChange} required />
-              <SubmitButton type="submit">Enviar</SubmitButton>
-            </Form>
-          </LeftContent>
-          <ImageContainer_2>
-            <Image src={formhome} alt="Formulário Imagem" />
-          </ImageContainer_2>
-        </ContentContainer>
-      </FaleConoscoContainer>
+      <ContentContainer>
+        <LeftContent>
+          <Title>Fale Conosco</Title>
+          <Description>
+            Se tiver dúvidas ou quiser falar conosco, clique abaixo para conversar diretamente pelo WhatsApp.
+          </Description>
+          <WhatsAppButton onClick={() => window.open("https://wa.me/5598982021516?text=Olá!%20Gostaria%20de%20falar%20com%20vocês.", "_blank")}>
+            Falar no WhatsApp
+          </WhatsAppButton>
+        </LeftContent>
+      </ContentContainer>
+</FaleConoscoContainer>
       <Footer />
     </Container>
   );

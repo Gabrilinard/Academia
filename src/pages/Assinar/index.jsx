@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import Header from "../../Components/Header";
@@ -101,7 +101,9 @@ const Payment = () => {
   const navigate = useNavigate();
   const [qrCode, setQrCode] = useState(null); // imagem do Pix
   const [transactionId, setTransactionId] = useState(null);
-
+  const [checkoutLink, setCheckoutLink] = useState(null);
+  const [mercadoPago, setMercadoPago] = useState(null);
+  const cardFormRef = useRef(null);
 
 
   useEffect(() => {
@@ -118,14 +120,72 @@ const Payment = () => {
   const calculatePaymentValue = (modalidade) => {
     switch (modalidade) {
       case "Avançado":
-        return 0.02;  // Ajuste o valor de pagamento conforme a modalidade
+        return 3;  // Ajuste o valor de pagamento conforme a modalidade
       case "Personalizado":
-        return 0.03;
+        return 2;
       default:
-        return 0.01;
+        return 1;
     }
   };
   
+useEffect(() => {
+  if (selectedMethod === "cartao") {
+    const mp = new window.MercadoPago("APP_USR-e5fce221-9f17-4163-a03d-4f933d063be3");
+    setMercadoPago(mp);
+
+    const bricksBuilder = mp.bricks();
+
+    bricksBuilder.create("cardPayment", "card-form-container", {
+      initialization: {
+        amount: paymentValue, // valor da transação
+      },
+      customization: {
+        paymentMethods: {
+          ticket: "all",
+          bankTransfer: "all",
+          creditCard: "all",
+        },
+      },
+      callbacks: {
+        onReady: () => {
+          console.log("Cartão pronto");
+        },
+        onSubmit: async (cardData) => {
+          try {
+            const response = await fetch("http://localhost:5000/processar-pagamento-cartao", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                token: cardData.token,
+                payment_method_id: cardData.paymentMethodId,
+                issuer_id: cardData.issuerId,
+                email: user.email,
+                amount: paymentValue,
+                installments: cardData.installments,
+                description: "Pagamento do curso",
+              }),
+            });
+
+            const result = await response.json();
+            if (result.status === "approved") {
+              await registerCourse(user.id, userData.modalidade, userData.genero, userData.idade);
+              await enviarEmailPagamento();
+              navigate("/MeusCursos");
+            } else {
+              alert("Pagamento recusado ou pendente.");
+            }
+          } catch (error) {
+            console.error("Erro ao processar pagamento:", error);
+          }
+        },
+        onError: (error) => {
+          console.error("Erro no formulário do cartão:", error);
+        },
+      },
+    });
+  }
+}, [selectedMethod]);
+
 
   const registerCourse = async (usuario_id, modalidade, genero, idade) => {
     try {
@@ -210,46 +270,6 @@ const enviarEmailPagamento = async () => {
       console.error("Erro ao verificar status do pagamento:", err);
     }
   };
-  
-  
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=Aa-HoRa40BTWhIiplNRHvneT6ML0OiXJzis8pBSsCWCF01LRJg817oyXiEyJhYkwjpbB11Ir5hxmJr4o&currency=BRL`;
-    script.async = true;
-    script.onload = () => {
-      window.paypal.Buttons({
-        createOrder(data, actions) {
-          return actions.order.create({
-            purchase_units: [{
-              amount: {
-                value: paymentValue.toFixed(2),
-              },
-            }],
-          });
-        },
-        onApprove(data, actions) {
-          return actions.order.capture().then((details) => {
-            alert("Pagamento realizado com sucesso!");
-            localStorage.setItem("paymentCompleted", "true");
-  
-            // Enviar os dados para o backend após o pagamento
-            const usuario_id = user.id; // Pegue o ID do usuário de onde for necessário, agora usando o user.id do AuthContext
-            const { modalidade, genero, idade } = userData;
-            registerCourse(usuario_id, modalidade, genero, idade);
-  
-            navigate("/MeusCursos");
-          });
-        },
-        onCancel(data) {
-          alert("Pagamento cancelado.");
-        },
-        onError(err) {
-          console.error(err);
-        }
-      }).render("#paypal-button-container");
-    };
-    document.body.appendChild(script);
-  }, [paymentValue, userData, navigate, user]);
 
 
   const criarPagamento = async () => {
@@ -289,7 +309,40 @@ const enviarEmailPagamento = async () => {
       console.error("Erro ao criar o pagamento:", erro);
     }
   };
-  
+
+  const criarPagamentoCartao = async () => {
+  if (!paymentValue || paymentValue <= 0) {
+    alert("O valor não pode ser zero.");
+    return;
+  }
+
+  const email = user?.email || "email@exemplo.com";
+
+  try {
+    const resposta = await fetch("http://localhost:5000/criar-pagamento-cartao-curso", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valor: paymentValue,
+        descricao: "Pagamento por curso",
+        email
+      })
+    });
+
+    const dados = await resposta.json();
+
+    if (dados.init_point) {
+      // Abre o link do Mercado Pago em uma nova aba
+      window.open(dados.init_point, "_blank");
+    } else {
+      alert("Erro ao iniciar pagamento com cartão.");
+    }
+
+  } catch (erro) {
+    console.error("Erro ao criar pagamento com cartão:", erro);
+  }
+};
+
 
   return (
     <PageContainer>
@@ -303,41 +356,67 @@ const enviarEmailPagamento = async () => {
         </UserDetails>
 
         <PaymentContainer>
-          <Title>Escolha seu Método de Pagamento</Title>
-          <h2>Valor a ser pago: R${paymentValue.toFixed(2)}</h2>
-          <PaymentMethods>
-            <PaymentOption
-                selected={selectedMethod === "pix"}
-                onClick={() => {
-                  setSelectedMethod("pix");
-                  criarPagamento(); 
-                }}
-              >
-              <Icon selected={selectedMethod === "pix"}>
+        <Title>Escolha seu Método de Pagamento</Title>
+        <h2>Valor a ser pago: R${paymentValue.toFixed(2)}</h2>
+
+        <PaymentMethods>
+          <PaymentOption
+            selected={selectedMethod === "pix"}
+            onClick={() => {
+              setSelectedMethod("pix");
+              criarPagamento(); 
+            }}
+          >
+            <Icon selected={selectedMethod === "pix"}>
               <FaQrcode />
-              </Icon>
-              PIX
-            </PaymentOption>
-          </PaymentMethods>
-          {selectedMethod === "pix" && (
-            <>
-              {qrCode && (
-                <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <h3 style={{ textAlign: "center" }}>Escaneie o QR Code com seu app bancário:</h3>
-                  <img
-                    src={qrCode}
-                    alt="QR Code Pix"
-                    style={{ width: "320px", maxWidth: "90%", borderRadius: "8px", marginTop: "10px" }}
-                  />
-                  <Button onClick={verificarPagamento} style={{ marginTop: "20px", maxWidth: "300px", marginBottom: "30px" }}>
-                    Já paguei, confirmar
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-          <div id="paypal-button-container"></div>
-        </PaymentContainer>
+            </Icon>
+            PIX
+          </PaymentOption>
+
+          <PaymentOption
+            selected={selectedMethod === "cartao"}
+            onClick={() => {
+              setSelectedMethod("cartao");
+              criarPagamentoCartao(); 
+            }}
+          >
+            <Icon selected={selectedMethod === "cartao"}>
+              💳
+            </Icon>
+            Cartão de Crédito
+          </PaymentOption>
+        </PaymentMethods>
+
+        {selectedMethod === "pix" && (
+      <>
+        {qrCode && (
+          <div style={{ marginTop: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <h3 style={{ textAlign: "center" }}>Escaneie o QR Code com seu app bancário:</h3>
+            <img
+              src={qrCode}
+              alt="QR Code Pix"
+              style={{ width: "320px", maxWidth: "90%", borderRadius: "8px", marginTop: "10px" }}
+            />
+
+            <Button onClick={() => {
+              navigator.clipboard.writeText(qrCode)
+                .then(() => alert("Código Pix copiado com sucesso!"))
+                .catch(() => alert("Erro ao copiar o código Pix."));
+            }} style={{ marginTop: "15px", maxWidth: "300px", backgroundColor: "#333" }}>
+              Copiar Código Pix
+            </Button>
+
+            <Button onClick={verificarPagamento} style={{ marginTop: "20px", maxWidth: "300px", marginBottom: "30px" }}>
+              Já paguei, confirmar
+            </Button>
+          </div>
+        )}
+      </>
+    )}
+       <div style={{ marginTop: "20px", width: "100%" }}>
+      <div id="card-form-container" ref={cardFormRef} style={{ width: "100%" }}></div>
+    </div>
+      </PaymentContainer>
       </ContentWrapper>
       <Footer />
     </PageContainer>
