@@ -4,10 +4,8 @@ const cors = require('cors');
 const mysql = require('mysql2');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const emailjs = require('emailjs-com'); // Importação do EmailJS
 const mercadopago = require('mercadopago');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const QRCode = require('qrcode');
 
